@@ -10,4 +10,9 @@ def functions_list_mul_online_matrix(functions_list, online_matrix, FunctionsLis
 
 
 def functions_list_mul_online_vector(functions_list, online_vector):
-    raise RuntimeError("TODO")  # TODO
+    from rbnics.backends.online.numpy.function import Function
+    assert len(functions_list) > 0
+    output = Function(functions_list[0].vector().N)
+    for (i, fun_i) in enumerate(functions_list):
+        output.vector()[:] += fun_i.vector() * online_vector[i]
+    return output

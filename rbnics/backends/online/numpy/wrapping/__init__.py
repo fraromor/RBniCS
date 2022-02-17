@@ -7,6 +7,7 @@
 from numpy import ix_ as Slicer
 from rbnics.backends.online.numpy.wrapping.basis_functions_matrix_mul import (
     basis_functions_matrix_mul_online_matrix, basis_functions_matrix_mul_online_vector)
+from rbnics.backends.online.numpy.wrapping.function_extend_or_restrict import function_extend_or_restrict
 from rbnics.backends.online.numpy.wrapping.function_load import function_load
 from rbnics.backends.online.numpy.wrapping.function_save import function_save
 from rbnics.backends.online.numpy.wrapping.function_to_vector import function_to_vector
@@ -23,6 +24,7 @@ from rbnics.backends.online.numpy.wrapping.vector_mul import vector_mul_vector
 __all__ = [
     "basis_functions_matrix_mul_online_matrix",
     "basis_functions_matrix_mul_online_vector",
+    "function_extend_or_restrict",
     "function_load",
     "function_save",
     "function_to_vector",

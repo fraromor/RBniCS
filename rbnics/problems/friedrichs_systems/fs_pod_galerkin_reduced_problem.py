@@ -1,0 +1,15 @@
+from rbnics.problems.base import LinearPODGalerkinReducedProblem, ParametrizedReducedDifferentialProblem
+from rbnics.problems.friedrichs_systems.fs_problem import FriedrichsSystemProblem
+from rbnics.problems.friedrichs_systems.fs_reduced_problem import FriedrichsSystemReducedProblem
+from rbnics.reduction_methods.friedrichs_systems import FriedrichsSystemsPODGalerkinReduction
+from rbnics.utils.decorators import ReducedProblemFor
+
+FriedrichsSystemsPODGalerkinReducedProblem_Base = LinearPODGalerkinReducedProblem(
+    FriedrichsSystemReducedProblem(ParametrizedReducedDifferentialProblem))
+
+
+# Base class containing the interface of a projection based ROM
+# for FriedrichsSystems problems.
+@ReducedProblemFor(FriedrichsSystemProblem, FriedrichsSystemsPODGalerkinReduction)
+class FriedrichsSystemsPODGalerkinReducedProblem(FriedrichsSystemsPODGalerkinReducedProblem_Base):
+    pass

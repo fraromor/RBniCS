@@ -27,6 +27,7 @@ from rbnics.problems.parabolic import ParabolicCoerciveProblem, ParabolicProblem
 from rbnics.problems.stokes import StokesProblem
 from rbnics.problems.stokes_optimal_control import StokesOptimalControlProblem
 from rbnics.problems.stokes_unsteady import StokesUnsteadyProblem
+from rbnics.problems.friedrichs_systems import FriedrichsSystemProblem
 from rbnics.sampling.distributions import (DrawFrom, EquispacedDistribution, LogEquispacedDistribution,
                                            LogUniformDistribution, UniformDistribution)
 from rbnics.scm.problems import ExactStabilityFactor, SCM
@@ -53,6 +54,7 @@ __all__ += [
     "StokesProblem",
     "StokesOptimalControlProblem",
     "StokesUnsteadyProblem",
+    "FriedrichsSystemProblem",
     # rbnics.sampling
     "DrawFrom",
     "EquispacedDistribution",

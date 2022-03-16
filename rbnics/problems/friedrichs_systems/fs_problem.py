@@ -21,7 +21,7 @@ class FriedrichsSystemProblem(FriedrichsSystemProblem_Base):
         # Form names for
         self.terms = ["a", "f", "s"]
         self.terms_order = {"a": 2, "f": 1, "s": 1}
-        self.components = ["u"]
+        self.components = ["z"]
 
     class ProblemSolver(FriedrichsSystemProblem_Base.ProblemSolver):
         def matrix_eval(self):

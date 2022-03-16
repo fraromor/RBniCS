@@ -27,7 +27,7 @@ class BoundaryM(UserExpression):
             values[3] = 0
             values[4] = 0
         else:
-            values = [0]*9
+            values = [0] * 9
 
 
     def value_shape(self):
@@ -165,12 +165,15 @@ class AdvectionDiffusionReaction(FriedrichsSystemProblem):
             a_a21 = -inner(z, dot(self.A_2_1, y.dx(1))) * dx
             aD = inner(dot(self.D('+'), avg(z)), jump(y)) * dS
             aS = self.alpha('+') * inner(jump(z), jump(y)) * dS
-            aDpM = 0.5 * inner(dot(self.D("+") + self.M, z), y) * ds
+            aDpM = 0.5 * inner(dot(self.D + self.M, z), y) * ds
             return (a_a0kappa, a_a0nu, a_a10, a_a11, a_a20, a_a21, aD, aS, aDpM)
         elif term == "f":
             f = self.f
             f0 = dot(y, f) * dx
             return (f0, )
+        elif term == "inner_product":
+            x0 = inner(grad(z), grad(y)) * dx
+            return (x0,)
         else:
             raise ValueError("Invalid term for assemble_operator().")
 

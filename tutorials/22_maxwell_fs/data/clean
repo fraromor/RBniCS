@@ -1,0 +1,1 @@
+rm -rf sphere.* sphere_physical_region.* sphere_facet_region.*

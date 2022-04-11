@@ -29,11 +29,13 @@ class Elastic(FriedrichsSystemProblem):
                                 subdomain_data=self.boundaries)
 
         self.n = FacetNormal(self.mesh)
-        self.alpha = Constant(10.)
+        self.alpha = Constant(0.1)
+        self.h = CellDiameter(mesh)
+        self.h_avg = (self.h('+') + self.h('-'))/2
 
         self.f = Expression(
-            ("0.1*exp(-pow((x[0]-0.5), 2)-pow((x[1]-0.5), 2))",
-             "0.1*exp(-pow((x[0]-0.5), 2)-pow((x[1]-0.5), 2))"),
+            ("0.01*exp(-pow((x[0]-0.5), 2)-pow((x[1]-0.5), 2))",
+             "0.01*exp(-pow((x[0]-0.5), 2)-pow((x[1]-0.5), 2))"),
             element=V.sub(1).ufl_element())
         # self.f = Expression(("0", "0", "0", "0", "1", "1"),
         #                     element=L.ufl_element())
@@ -83,16 +85,16 @@ class Elastic(FriedrichsSystemProblem):
                              jump(v), 0.5 *
                              (dot(avg(s + s.T), self.n('+')))) * self.dS
 
-            a_DpM = -inner(u, 0.5 * dot(t + t.T, self.n)) * self.ds
-            # a_DpM = - inner(v, 0.5*dot(s+s.T, self.n)) * self.ds
+            # a_DpM = -inner(u, 0.5 * dot(t + t.T, self.n)) * self.ds
+            a_DpM = - inner(v, 0.5*dot(s+s.T, self.n)) * self.ds
             # a_DpM = 0.5 * inner(dot(self.DpM, z), y) * self.ds
 
             # stability terms (upwind): interfaces aS_i and boundaries aS_f
-            aS_i = -self.alpha('+') * (
+            aS_i = -(self.alpha('+')/self.h_avg) * (
                 inner(0.5 * (dot(jump(t + t.T), self.n('+'))), 0.5 *
                       (dot(jump(s + s.T), self.n('+')))) +
                 inner(jump(v), jump(u))) * self.dS
-            aS_f = -self.alpha('+') * inner(u, v) * self.ds
+            aS_f = -(self.alpha/self.h) * inner(u, v) * self.ds
 
             return (a_a0, a_a0_mu, a_a0_lambda, a_a123, a_D, a_DpM, aS_i, aS_f)
         elif term == "f":
@@ -125,7 +127,7 @@ V = FunctionSpace(mesh, element)
 
 # 3. Allocate an object of the Friedrichs' systems class
 problem = Elastic(V, mesh=mesh, subdomains=subdomains, boundaries=boundaries)
-mu_range = [(1e0, 1e2), (1, 1), (1e-4, 1e-3)]
+mu_range = [(1e-1, 1e2), (1, 1), (1e-4, 1e-2)]
 problem.set_mu_range(mu_range)
 
 # 4. Prepare reduction with a POD-Galerkin method
@@ -137,7 +139,7 @@ reduction_method.initialize_training_set(1, sampling=LogUniformDistribution())
 reduced_problem = reduction_method.offline()
 
 # 6. Perform an online solve
-online_mu = (1000, 1, 1e-2)
+online_mu = (0.1, 1, 1e-2)
 # print("online", len(mu_range), len(online_mu))
 reduced_problem.set_mu(online_mu)
 reduction_method.truth_problem.set_mu(online_mu)
@@ -152,26 +154,34 @@ p = plot(s.sub(1).sub(1))
 plt.colorbar(p)
 plt.title("y displacement")
 plt.show()
+p = plot(s.sub(0).sub(0))
+plt.colorbar(p)
+plt.title("stress 11 mu={}".format(online_mu[0]))
+plt.show()
+p = plot(s.sub(0).sub(3))
+plt.colorbar(p)
+plt.title("stress 12 mu={}")
+plt.show()
 
-u_1 = s.sub(0)
-u_2 = s.sub(1)
-u_3 = s.sub(2)
-u_4 = s.sub(3)
-u_5 = s.sub(4)
-u_6 = s.sub(5)
+# u_1 = s.sub(0)
+# u_2 = s.sub(1)
+# u_3 = s.sub(2)
+# u_4 = s.sub(3)
+# u_5 = s.sub(4)
+# u_6 = s.sub(5)
 
-file = File("Elastic_1.pvd")
-file << u_1
-file = File("Elastic_2.pvd")
-file << u_2
-file = File("Elastic_3.pvd")
-file << u_3
-file = File("Elastic_4.pvd")
-file << u_4
-file = File("Elastic_5.pvd")
-file << u_5
-file = File("Elastic_6.pvd")
-file << u_6
+# file = File("Elastic_1.pvd")
+# file << u_1
+# file = File("Elastic_2.pvd")
+# file << u_2
+# file = File("Elastic_3.pvd")
+# file << u_3
+# file = File("Elastic_4.pvd")
+# file << u_4
+# file = File("Elastic_5.pvd")
+# file << u_5
+# file = File("Elastic_6.pvd")
+# file << u_6
 print("Saved online snapshot")
 
 # reduced_problem.solve()

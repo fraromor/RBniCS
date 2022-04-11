@@ -29,9 +29,9 @@ class Elastic(FriedrichsSystemProblem):
                                 subdomain_data=self.boundaries)
 
         self.n = FacetNormal(self.mesh)
-        self.alpha = Constant(0.1)
+        self.alpha = Constant(1)
         self.h = CellDiameter(mesh)
-        self.h_avg = (self.h('+') + self.h('-'))/2
+        self.h_avg = (self.h('+') + self.h('-')) / 2
 
         self.f = Expression(
             ("0.01*exp(-pow((x[0]-0.5), 2)-pow((x[1]-0.5), 2))",
@@ -52,13 +52,16 @@ class Elastic(FriedrichsSystemProblem):
             theta_a0 = 1.
             theta_a0_mu = mu[2]
             theta_a0_lambda = mu[0]
-            theta_a123 = mu[1]
-            theta_D = mu[1]
-            theta_DpM = mu[1]
+            theta_a123 = 1.
+            theta_D = 1.
+            theta_a123_lame2 = mu[1]
+            theta_D_lame2 = mu[1]
+            theta_DpM = 1.
             theta_S_i = 1.
             theta_S_f = 1.
             return (theta_a0, theta_a0_mu, theta_a0_lambda, theta_a123,
-                    theta_D, theta_DpM, theta_S_i, theta_S_f)
+                    theta_D, theta_a123_lame2,
+                    theta_D_lame2, theta_DpM, theta_S_i, theta_S_f)
         elif term == "f":
             theta_f0 = 1.
             return (theta_f0, )
@@ -73,30 +76,31 @@ class Elastic(FriedrichsSystemProblem):
         if term == "a":
             a_a0 = inner(s, t) * self.dx
             a_a0_mu = inner(u, v) * self.dx
-            a_a0_lambda = -tr(s) * tr(t) * self.dx
+            a_a0_lame1 = -tr(s) * tr(t) * self.dx
 
-            a_a123 = 0.5 * inner(s + s.T, sym(grad(v))) * self.dx + inner(
-                u, 0.5 * div(t + t.T)) * self.dx
+            a_a123 = 0.5 * inner(s + s.T, sym(grad(v))) * self.dx
+            a_a123_lame2 = inner(u, 0.5 * div(t + t.T)) * self.dx
 
             # a_D = -inner(avg(u), 0.5*(dot(jump(t+t.T), self.n('+')))) * self.dS -inner(jump(v), 0.5*(dot(avg(s+s.T), self.n('+')))) * self.dS
 
-            a_D = -inner(avg(u), 0.5 *
-                         (dot(jump(t + t.T), self.n('+')))) * self.dS - inner(
-                             jump(v), 0.5 *
-                             (dot(avg(s + s.T), self.n('+')))) * self.dS
+            a_D_lame2 = -inner(avg(u), 0.5 *
+                         (dot(jump(t + t.T), self.n('+')))) * self.dS
+            a_D = -inner(jump(v), 0.5 *
+                               (dot(avg(s + s.T), self.n('+')))) * self.dS
 
             # a_DpM = -inner(u, 0.5 * dot(t + t.T, self.n)) * self.ds
-            a_DpM = - inner(v, 0.5*dot(s+s.T, self.n)) * self.ds
+            a_DpM = -inner(v, 0.5 * dot(s + s.T, self.n)) * self.ds
             # a_DpM = 0.5 * inner(dot(self.DpM, z), y) * self.ds
 
             # stability terms (upwind): interfaces aS_i and boundaries aS_f
-            aS_i = -(self.alpha('+')/self.h_avg) * (
+            aS_i = -(self.alpha('+') / self.h_avg) * (
                 inner(0.5 * (dot(jump(t + t.T), self.n('+'))), 0.5 *
                       (dot(jump(s + s.T), self.n('+')))) +
                 inner(jump(v), jump(u))) * self.dS
-            aS_f = -(self.alpha/self.h) * inner(u, v) * self.ds
+            aS_f = -(self.alpha / self.h) * inner(u, v) * self.ds
 
-            return (a_a0, a_a0_mu, a_a0_lambda, a_a123, a_D, a_DpM, aS_i, aS_f)
+            return (a_a0, a_a0_mu, a_a0_lame1, a_a123, a_a123_lame2, a_D,
+                    a_D_lame2, a_DpM, aS_i, aS_f)
         elif term == "f":
             f = self.f
             f0 = dot(v, f) * self.dx
@@ -127,7 +131,7 @@ V = FunctionSpace(mesh, element)
 
 # 3. Allocate an object of the Friedrichs' systems class
 problem = Elastic(V, mesh=mesh, subdomains=subdomains, boundaries=boundaries)
-mu_range = [(1e-1, 1e2), (1, 1), (1e-4, 1e-2)]
+mu_range = [(1e-2, 1e-1), (1e-1, 1), (1e-4, 1e-2)]
 problem.set_mu_range(mu_range)
 
 # 4. Prepare reduction with a POD-Galerkin method
@@ -139,13 +143,18 @@ reduction_method.initialize_training_set(1, sampling=LogUniformDistribution())
 reduced_problem = reduction_method.offline()
 
 # 6. Perform an online solve
-online_mu = (0.1, 1, 1e-2)
+online_mu = (0.1, 1, 1e-8)
 # print("online", len(mu_range), len(online_mu))
 reduced_problem.set_mu(online_mu)
 reduction_method.truth_problem.set_mu(online_mu)
 
 # Plot solution
 s = reduction_method.truth_problem.solve()
+q = abs(div(s.sub(1)))
+p = plot(q)
+plt.colorbar(p)
+plt.title("div u mu={}".format(online_mu[0]))
+plt.show()
 p = plot(s.sub(1).sub(0))
 plt.colorbar(p)
 plt.title("x displacement mu={}".format(online_mu[0]))
